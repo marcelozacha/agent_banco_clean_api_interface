@@ -1,0 +1,20 @@
+{
+    "user_marcelo": {
+        "id": "user_marcelo",
+        "nome": "Marcelo",
+        "agencia": "0001",
+        "conta": "12345",
+        "digito": "6",
+        "codigo": "M01",
+        "saldo": 4700.0
+    },
+    "user_daiane": {
+        "id": "user_daiane",
+        "nome": "Daiane",
+        "agencia": "0001",
+        "conta": "54321",
+        "digito": "0",
+        "codigo": "D02",
+        "saldo": 3800.0
+    }
+}

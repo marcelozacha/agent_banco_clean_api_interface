@@ -6,5 +6,93 @@ dist/
 wheels/
 *.egg-info
 
-# Virtual environments
+# ==============================================================================
+# PYTHON (Arquivos gerados e compilação)
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==============================================================================
+# AMBIENTES VIRTUAIS (Virtual Environments)
+# ==============================================================================
 .venv
+venv/
+ENV/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+
+# ==============================================================================
+# ARQUIVOS LOCAIS / SECRETOS (Segurança)
+# ==============================================================================
+.env
+.env.[a-zA-Z]*
+*.env
+auth.json
+secrets.json
+
+
+# ==============================================================================
+# TESTES, COBERTURA E QUALIDADE (Pytest, Tox, Ruff)
+# ==============================================================================
+.htmlcov/
+.tox/
+.nosetests/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints
+
+# ==============================================================================
+# EDITORES DE CÓDIGO (VS Code, PyCharm, Cursor)
+# ==============================================================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# ==============================================================================
+# SISTEMA OPERACIONAL (Windows e macOS)
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
