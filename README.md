@@ -68,14 +68,28 @@ __tools = consultar_saldo, realizar_saque, realizar_deposito, transferir_valor</
 
 ```mermaid
 graph TD
-    User([Usuário: CLI / Web Chat / API]) --> Guardrails[Guardrails & Segurança]
-    Guardrails --> ChatService[chat_service.py]
-    ChatService --> Assistente[Nó Assistente / Raciocínio ReAct]
-    Assistente -.->|Tool Call| HITL{HITL: __interrupt = before<br/>Aprovar operação?}
-    HITL -->|Aprovado| Tools[Nó Tools / Execução]
-    HITL -->|Rejeitado| Assistente
+    subgraph Fluxo_CLI["Caminho CLI (src/main.py)"]
+        UserCLI([Usuário CLI]) --> GuardrailsCLI[Guardrails & Segurança]
+    end
+
+    subgraph Fluxo_API_Web["Caminho API & Web Chat"]
+        UserWebAPI([Usuário: Web Chat / API]) --> APIWeb[API FastAPI]
+        APIWeb --> ChatService[chat_service.py]
+        ChatService --> GuardrailsService[Guardrails & Segurança]
+    end
+
+    GuardrailsCLI --> Assistente[Nó Assistente / Raciocínio ReAct]
+    GuardrailsService --> Assistente
+
+    Assistente -.->|Tool Call| HITL{HITL: __interrupt = before<br/>Aprovar operação? s/n}
+    HITL -->|s - Aprovado| Tools[Nó Tools / Execução]
+    HITL -->|n - Rejeitado| Assistente
     Tools --> Assistente
-    Assistente -->|Resposta Final| User
+
+    Assistente -->|Resposta Final CLI| UserCLI
+    Assistente -->|Resposta Final via chat_service.py| ChatService
+    ChatService --> APIWeb
+    APIWeb --> UserWebAPI
 ```
 
 ---
