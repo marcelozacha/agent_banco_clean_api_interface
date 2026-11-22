@@ -6,7 +6,7 @@
         "conta": "12345",
         "digito": "6",
         "codigo": "M01",
-        "saldo": 4700.0
+        "saldo": 4710.0
     },
     "user_daiane": {
         "id": "user_daiane",
@@ -15,6 +15,6 @@
         "conta": "54321",
         "digito": "0",
         "codigo": "D02",
-        "saldo": 3800.0
+        "saldo": 3820.0
     }
 }

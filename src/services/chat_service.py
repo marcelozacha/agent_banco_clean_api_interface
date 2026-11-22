@@ -32,10 +32,20 @@ def _extrair_resposta_assistente(mensagens: list[Any]) -> str:
 
 
 def _registrar_snapshot_grafo(config: dict[str, Any], evento: str) -> Any:
-    """Registra no log de observabilidade o estado atual do grafo e eventuais tool_calls."""
+    """Registra no log de observabilidade o estado atual do grafo e eventuais tool_calls/tool_outputs."""
     state = grafo.get_state(config)
     mensagens = state.values.get("messages", []) if state.values else []
     ultima_msg = mensagens[-1] if mensagens else None
+
+    tool_outputs = [
+        {
+            "name": getattr(m, "name", None),
+            "tool_call_id": getattr(m, "tool_call_id", None),
+            "content_preview": str(getattr(m, "content", ""))[:200],
+        }
+        for m in mensagens
+        if getattr(m, "type", "") == "tool"
+    ]
 
     registrar_observabilidade_llm(
         evento,
@@ -45,6 +55,8 @@ def _registrar_snapshot_grafo(config: dict[str, Any], evento: str) -> Any:
             "messages_count": len(mensagens),
             "last_msg_type": getattr(ultima_msg, "type", None),
             "tool_calls": getattr(ultima_msg, "tool_calls", None),
+            "tool_outputs_count": len(tool_outputs),
+            "last_tool_output": tool_outputs[-1] if tool_outputs else None,
             "last_content_preview": str(getattr(ultima_msg, "content", ""))[:250],
         },
     )
@@ -86,6 +98,13 @@ def _executar_grafo_sync(
         }
 
     if aprovar is True:
+        state_pendente = grafo.get_state(config)
+        if not (state_pendente.next and "tools" in state_pendente.next):
+            return {
+                "status": "completed",
+                "agent_response": "Não há nenhuma operação pendente de confirmação nesta sessão.",
+                "pending_actions": [],
+            }
         grafo.invoke(None, config=config)
     elif mensagem is not None:
         grafo.invoke({"messages": [HumanMessage(content=mensagem)]}, config=config)

@@ -241,6 +241,8 @@ uv add fastapi uvicorn
   uv run python -m src.tests.test_agent_api
   ```
 
+
+
 ---
 
 ## 🕹️ Comandos de Interação CLI

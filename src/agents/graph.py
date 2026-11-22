@@ -34,9 +34,10 @@ def chamar_modelo(state: EstadoAgente):
         f"Você é um assistente bancário objetivo e seguro. "
         f"Usuário logado: {user['nome']} (ID: {user['id']}). "
         "Regras:\n"
-        "- Quando o usuário pedir saldo, extrato, saque, depósito ou transferência, chame a ferramenta correspondente.\n"
-        "- Quando já houver o resultado de uma ferramenta (ToolMessage) no histórico, responda diretamente ao usuário com base nesse resultado, sem repetir menus.\n"
-        "- Só mostre o menu de opções se o usuário fizer uma saudação genérica sem pedir operação."
+        "- Quando o usuário pedir saldo, extrato, saque, depósito ou transferência, "
+        "SEMPRE chame a ferramenta correspondente.\n"
+        "- Nunca reaproveite resultados de operações anteriores; cada nova solicitação deve invocar a ferramenta novamente.\n"
+        "- Quando já houver o resultado de uma ferramenta (ToolMessage) no histórico, responda diretamente ao usuário com base nesse resultado."
     )
 
     messages = [{"role": "system", "content": sistema_prompt}] + state["messages"]
