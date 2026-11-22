@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teste - Agente Bancário (HITL)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 1.15rem;
+            margin: 0;
+        }
+
+        .session-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .session-controls input {
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 5px 8px;
+            width: 170px;
+        }
+
+        #chat-history {
+            height: 400px;
+            overflow-y: auto;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            padding: 10px 12px;
+            border-radius: 8px;
+            max-width: 85%;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 0.92rem;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .msg.agent {
+            align-self: flex-start;
+            background: #334155;
+            color: #f8fafc;
+        }
+
+        .msg.blocked {
+            align-self: flex-start;
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+            color: #fecaca;
+        }
+
+        .msg.system {
+            align-self: center;
+            background: #172554;
+            border: 1px solid #3b82f6;
+            color: #bfdbfe;
+            font-size: 0.82rem;
+            max-width: 95%;
+        }
+
+        #hitl-box {
+            display: none;
+            background: #422006;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        #hitl-box.active {
+            display: flex;
+        }
+
+        .hitl-title {
+            font-weight: 600;
+            color: #fcd34d;
+        }
+
+        .hitl-details {
+            background: #0f172a;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.82rem;
+            white-space: pre-wrap;
+            color: #fde68a;
+        }
+
+        .hitl-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        #message-input {
+            flex: 1;
+            background: #0f172a;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #btn-send {
+            background: #16a34a;
+            color: #fff;
+        }
+
+        #btn-confirm {
+            background: #eab308;
+            color: #0f172a;
+        }
+
+        #btn-cancel {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #475569;
+            color: #f8fafc;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Agente Bancário — Console de Teste</h1>
+            <div class="session-controls">
+                <label for="thread-id">Thread:</label>
+                <input id="thread-id" type="text" value="sessao_web_1" />
+                <button class="btn-secondary" type="button" onclick="novaSessao()">Nova</button>
+            </div>
+        </div>
+
+        <div id="chat-history">
+            <div class="msg system">Conectado à API em http://127.0.0.1:8000. Digite uma mensagem para começar.</div>
+        </div>
+
+        <div id="hitl-box">
+            <div class="hitl-title">⚠️ Confirmação Necessária (HITL)</div>
+            <div id="hitl-details" class="hitl-details"></div>
+            <div class="hitl-actions">
+                <button id="btn-confirm" type="button" onclick="enviarConfirmacao(true)">Confirmar Operação</button>
+                <button id="btn-cancel" type="button" onclick="enviarConfirmacao(false)">Cancelar</button>
+            </div>
+        </div>
+
+        <form class="input-row" onsubmit="enviarMensagem(event)">
+            <input id="message-input" type="text" placeholder="Ex.: Qual meu saldo? ou Quero sacar 50 reais"
+                autocomplete="off" required />
+            <button id="btn-send" type="submit">Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+
+        const historyEl = document.getElementById("chat-history");
+        const inputEl = document.getElementById("message-input");
+        const sendBtn = document.getElementById("btn-send");
+        const hitlBox = document.getElementById("hitl-box");
+        const hitlDetails = document.getElementById("hitl-details");
+        const confirmBtn = document.getElementById("btn-confirm");
+        const cancelBtn = document.getElementById("btn-cancel");
+        const threadInput = document.getElementById("thread-id");
+
+        function getThreadId() {
+            return threadInput.value.trim() || "sessao_web_1";
+        }
+
+        function novaSessao() {
+            threadInput.value = "sessao_" + Date.now().toString().slice(-5);
+            limparHitl();
+            appendMessage(`Nova sessão iniciada: ${getThreadId()}`, "system");
+        }
+
+        function appendMessage(text, role = "agent") {
+            const div = document.createElement("div");
+            div.className = `msg ${role}`;
+            div.textContent = text;
+            historyEl.appendChild(div);
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+
+        function mostrarHitl(pendingActions) {
+            const resumo = pendingActions
+                .map((a) => `Ferramenta: ${a.name}\nArgumentos: ${JSON.stringify(a.args, null, 2)}`)
+                .join("\n\n");
+            hitlDetails.textContent = resumo || "Operação sensível aguardando confirmação.";
+            hitlBox.classList.add("active");
+            sendBtn.disabled = true;
+            inputEl.disabled = true;
+        }
+
+        function limparHitl() {
+            hitlBox.classList.remove("active");
+            hitlDetails.textContent = "";
+            sendBtn.disabled = false;
+            inputEl.disabled = false;
+        }
+
+        function tratarRespostaApi(data) {
+            if (data.status === "blocked") {
+                appendMessage(data.agent_response, "blocked");
+                limparHitl();
+                return;
+            }
+
+            appendMessage(data.agent_response, "agent");
+
+            if (data.tool_calls_required || data.status === "pending_approval") {
+                mostrarHitl(data.pending_actions || []);
+            } else {
+                limparHitl();
+            }
+        }
+
+        async function enviarMensagem(event) {
+            event.preventDefault();
+            const texto = inputEl.value.trim();
+            if (!texto) return;
+
+            appendMessage(texto, "user");
+            inputEl.value = "";
+            sendBtn.disabled = true;
+
+            try {
+                const resp = await fetch(`${API_BASE}/chat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_message: texto,
+                        thread_id: getThreadId(),
+                    }),
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+
+                const data = await resp.json();
+                tratarRespostaApi(data);
+            } catch (err) {
+                appendMessage(`Erro ao comunicar com a API: ${err.message}`, "blocked");
+                sendBtn.disabled = false;
+            } finally {
+                if (!hitlBox.classList.contains("active")) {
+                    sendBtn.disabled = false;
+                    inputEl.focus();
+                }
+            }
+        }
+
+        async function enviarConfirmacao(aprovar) {
+            confirmBtn.disabled = true;
+            cancelBtn.disabled = true;
+
+            try {
+                const resp = await fetch(`${API_BASE}/chat/confirm`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        thread_id: getThreadId(),
+                        aprovar: aprovar,
+                    }),
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+
+                const data = await resp.json();
+                limparHitl();
+                tratarRespostaApi(data);
+            } catch (err) {
+                appendMessage(`Erro ao confirmar operação: ${err.message}`, "blocked");
+            } finally {
+                confirmBtn.disabled = false;
+                cancelBtn.disabled = false;
+                inputEl.focus();
+            }
+        }
+    </script>
+</body>
+
+</html>

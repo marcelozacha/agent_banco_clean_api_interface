@@ -4,19 +4,20 @@
 from typing import Literal, TypedDict
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_ollama import ChatOllama
-from langgraph.graph import END, START, StateGraph
-from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver # checkpointer para salvar o estado do grafo em memória para HIL (Human-in-the-Loop)
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
 
-from src.tools.bank_tools import ALL_TOOLS  # <-- importa o arquivo de tools.py que contém todas as ferramentas bancárias
-from src.core.database import obter_usuario_logado # <-- importa a função para obter o usuário logado
+from src.core import obter_usuario_logado
+from src.tools import ALL_TOOLS # <-- importa o arquivo de tools.py que contém todas as ferramentas bancárias
+from src.utils import registrar_observabilidade_llm
 
-#para logar prompts, chains, tool calls e parâmetros
-from src.utils.logger import registrar_observabilidade_llm  # <--- Importação do logger
-
-# 1. Definir o Estado do Agente
+# 1. Definir o Estado do Agente e reducer
+#Sem Annotated[list[BaseMessage], add_messages], cada nó que retorna {"messages": [...]} sobrescreve a lista inteira em vez de concatenar (append) ao histórico
 class EstadoAgente(TypedDict):
-    messages: list[BaseMessage]
+    messages: Annotated[list[BaseMessage], add_messages]
+
 
 # 2. Inicializar o modelo Ollama local (ex: gemma2 ou gemma4)
 # Tool Calling Nativo / Roteamento Implícito
@@ -29,11 +30,14 @@ llm = ChatOllama(model="gemma4:e4b", temperature=0).bind_tools(ALL_TOOLS)
 def chamar_modelo(state: EstadoAgente):
     user = obter_usuario_logado()
     sistema_prompt = (
-        f"Você é um assistente bancário inteligente. "
-        f"O usuário atualmente logado é: {user['nome']} (ID: {user['id']}). "
-        f"Ajude-o a consultar saldo, sacar, depositar ou transferir dinheiro com segurança."
+        f"Você é um assistente bancário objetivo e seguro. "
+        f"Usuário logado: {user['nome']} (ID: {user['id']}). "
+        "Regras:\n"
+        "- Quando o usuário pedir saldo, extrato, saque, depósito ou transferência, chame a ferramenta correspondente.\n"
+        "- Quando já houver o resultado de uma ferramenta (ToolMessage) no histórico, responda diretamente ao usuário com base nesse resultado, sem repetir menus.\n"
+        "- Só mostre o menu de opções se o usuário fizer uma saudação genérica sem pedir operação."
     )
-    
+
     messages = [{"role": "system", "content": sistema_prompt}] + state["messages"]
     
     # [OBSERVABILIDADE] Opcional: registrar o prompt/chain enviado ao LLM aqui se desejar
@@ -46,30 +50,11 @@ def chamar_modelo(state: EstadoAgente):
 def deve_continuar(state: EstadoAgente) -> Literal["tools", END]:
     messages = state["messages"]
     last_message = messages[-1]
-    if last_message.tool_calls:
+    if getattr(last_message, "tool_calls", None):
         return "tools"
     return END
 
-# 5. Função para salvar o grafo em formato Mermaid localmente
-def salvar_mermaid_local(graph_compiled, filename="grafo_arquitetura.mmd"):
-    """Gera e salva a representação em texto do Mermaid localmente."""
-    try:
-        # Obtém o código estruturado do grafo em texto puro
-        mermaid_code = graph_compiled.get_graph().draw_mermaid()
-        
-        # Salva em um arquivo .mmd compatível com editores de texto e viewers
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(mermaid_code)
-            
-        print(f"📊 Código Mermaid exportado com sucesso para '{filename}'")
-        print("💡 Dica: Abra este arquivo no VS Code com a extensão 'Markdown Preview Mermaid Support'")
-        print("   ou cole o conteúdo gerado em: https://mermaid.live/")
-        
-    except Exception as e:
-        print(f"⚠️ Não foi possível gerar o código Mermaid: {e}")
 
-
-# 6. Construir o Grafo
 workflow = StateGraph(EstadoAgente)
 
 workflow.add_node("assistente", chamar_modelo) # Nó do assistente que chama o modelo LLM e já classifica a intenção e roteia para tools se necessário
@@ -81,7 +66,3 @@ workflow.add_edge("tools", "assistente")
 
 memory = MemorySaver()
 grafo = workflow.compile(checkpointer=memory, interrupt_before=["tools"])
-
-
-# Executa a função de salvamento local
-#salvar_mermaid_local(grafo)
