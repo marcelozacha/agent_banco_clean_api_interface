@@ -212,7 +212,7 @@ Certifique-se de ter as seguintes ferramentas e modelos instalados em sua máqui
 ### 1. Clonar e Sincronizar o Ambiente com `uv`
 
 ```bash
-git clone https://github.com/marcelozacha/agent_banco_v2.git
+git clone https://github.com/marcelozacha/agent_banco_clean_api_interface
 cd agent_banco_v2
 uv sync
 ```
@@ -245,10 +245,15 @@ uv add fastapi uvicorn
   ```
   *(Acesse `http://127.0.0.1:5500` no navegador após iniciar a API em `http://127.0.0.1:8000`).*
 
+![alt text](image-1.png)
+
+
 - **Rodar a Aplicação em modo CLI:**
   ```bash
   uv run python -m src.main
   ```
+
+  ![alt text](image-2.png)
 
 - **Rodar os Testes da API:**
   ```bash
