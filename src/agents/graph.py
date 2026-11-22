@@ -1,13 +1,14 @@
 # graph.py
 # Este arquivo define o grafo de estados do agente bancário, integrando o modelo LLM (Ollama) com as ferramentas (tools) e a lógica de fluxo.
 
-from typing import Literal, TypedDict
-from langchain_core.messages import BaseMessage, HumanMessage
+from typing import Annotated, Literal, TypedDict
+from langchain_core.messages import BaseMessage
 from langchain_ollama import ChatOllama
-from langgraph.checkpoint.memory import MemorySaver # checkpointer para salvar o estado do grafo em memória para HIL (Human-in-the-Loop)
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
+
 
 from src.core import obter_usuario_logado
 from src.tools import ALL_TOOLS # <-- importa o arquivo de tools.py que contém todas as ferramentas bancárias
